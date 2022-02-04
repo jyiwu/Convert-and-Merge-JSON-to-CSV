@@ -1,0 +1,32 @@
+library(jsonlite)
+library(data.table)
+library(dplyr)
+library(plyr)
+library(tidyverse)
+
+data.files = list.files()
+wb = list.files(pattern = "*.json")
+dflist <- list()
+name <- list()
+
+for (i in wb) {
+  name[i] = strsplit(strsplit(i,"_")[[1]][1],"-")
+  dflist[[i]] = cbind(name[i], data.table(fromJSON(i,flatten = TRUE)[["search_results"]]))
+  
+}
+
+new_list <- rbind.fill(lapply(dflist, function(x){as.data.frame(x,stringsAsFactors=FALSE)})) %>%
+  unnest_wider(V1) %>%
+  unnest_longer(categories) %>%
+  unnest_wider(prices,names_repair = 'unique') %>%
+  unnest_wider(symbol,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(value,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(currency,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(raw,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(name,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(is_primary,names_sep = "_",names_repair = 'unique')%>%
+  unnest_wider(is_rrp,names_sep = "_",names_repair = 'unique')
+
+colnames(new_list)[1:4] <- c("Year","Month","Day","Time")
+write.csv(new_list,file = "....")
+
